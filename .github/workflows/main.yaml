@@ -1,0 +1,23 @@
+name: denoflare CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Send cloudflare worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: latest
+      - name: Update .denoflare file
+        run: deno run -A scripts/index.ts ${{env.BOT_TOKEN}} ${{env.MASTER_ID}} ${{env.MASTER_USERNAME}} ${{env.ACCOUNT_ID}} ${{env.API_TOKEN}}
+      - name: Install denoflare
+        run: deno install -A --name denoflare --force https://raw.githubusercontent.com/skymethod/denoflare/v0.6.0/cli/cli.ts
+      - name: Deploy to Cloudflare
+        run: denoflare push my-bot

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/skymethod/denoflare/v0.6.0/common/config.schema.json",
+  "scripts": {
+    "my-bot": {
+      "path": "src/bot.ts",
+      "localPort": 3030,
+      "bindings": {
+        "BOT_TOKEN": {
+          "value": "<BOT_TOKEN>"
+        },
+        "MASTER_ID": {
+          "value": "<MASTER_ID>"
+        },
+        "MASTER_USERNAME": {
+          "value": "<MASTER_USERNAME>"
+        }
+      },
+      "workersDev": true
+    }
+  },
+  "profiles": {
+    "account1": {
+      "accountId": "<ACCOUNT_ID>",
+      "apiToken": "<API_TOKEN>",
+    }
+  }
+}
