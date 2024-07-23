@@ -24,7 +24,7 @@ export default {
       'start',
       async (ctx) =>
         await ctx.reply(
-          `这是 @${env.MASTER_USERNAME} 的私聊机器人，请不要在群组中使用`
+          `Hello World. 这是 @${env.MASTER_USERNAME} 的私聊机器人，请不要在群组中使用`
         )
     )
 
