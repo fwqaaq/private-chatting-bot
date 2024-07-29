@@ -30,13 +30,36 @@ export async function handleGeneralMessage(
   bot: Bot,
   msgMap: Map<number, FromInfo>
 ) {
-  //
   if (!ctx.from || ctx.chat?.type !== 'private') {
     return await next()
   }
 
-  // if the message is from master, continue next middleware
+  if (!ctx.message) return await next()
+  // if the message is a command, continue next middleware
+  if (ctx.message.text?.startsWith('/')) return await next()
+  // if the message is from master, transfer the message to user
   if (ctx.from.username === env.MASTER_USERNAME) {
+    // not reply to message
+    if (!ctx.message.reply_to_message)
+      return await ctx.reply('请回复消息以转发给用户')
+
+    const replyToId = ctx.message.reply_to_message.message_id
+    const fromUser = msgMap.get(replyToId)
+    // if the message is not from user, return
+    if (!fromUser) return await ctx.reply('未找到对应的用户')
+
+    // transfer the message to user
+    try {
+      await bot.api.sendMessage(
+        fromUser.chatId,
+        `来自 @${env.MASTER_USERNAME} 的消息: ${ctx.message.text}`,
+        {
+          reply_parameters: { message_id: fromUser.messageId },
+        }
+      )
+    } catch (e) {
+      console.error(`转发消息给用户时出错: ${e}`)
+    }
     return await next()
   }
 
@@ -46,7 +69,6 @@ export async function handleGeneralMessage(
   }
 
   try {
-    if (!ctx.message) return await next()
     const sendMessage = await bot.api.sendMessage(
       env.MASTER_ID,
       `来自 @${ctx.from.username} 的消息: ${ctx.message.text}`
@@ -90,4 +112,33 @@ export function cleanupMap(
     }
     return await next()
   }
+}
+
+// url: spotify URL
+export async function getSpotifyDownloadLink(url: string) {
+  const spotifyMetadataUrl = 'https://spotifymate.com'
+  const _metadata_res = await fetch(spotifyMetadataUrl)
+  const _metadata_text = await _metadata_res.text()
+  const _metadata_pattern = /([^"]+)"\s+.+value="([^"]+)/
+
+  const _metadata_match = _metadata_text.match(_metadata_pattern)
+  if (!_metadata_match) return null
+  const [_, flag, value] = _metadata_match
+  const sessionData = _metadata_res.headers.getSetCookie()[0]
+
+  const form = new FormData()
+  form.append(flag, value)
+  form.append('url', url)
+
+  const res = await fetch(`${spotifyMetadataUrl}/action`, {
+    method: 'POST',
+    headers: {
+      Cookie: sessionData,
+    },
+    body: form,
+  })
+  const text = await res.text()
+  const pattern = /<a\s+[^>]*href\s*=\s*["']([^"']*)["'][^>]*>/i
+  const match = text.match(pattern)
+  return match ? match[1] : null
 }
