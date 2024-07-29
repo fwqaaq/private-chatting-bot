@@ -4,7 +4,7 @@ import {
   preventGroupJoin,
   handleGeneralMessage,
   cleanupMap,
-  getSpotifyDownloadLink,
+  spotifyDownloadCommand,
 } from './middleware.ts'
 
 const msgMap = new Map<number, FromInfo>()
@@ -12,8 +12,8 @@ const msgMap = new Map<number, FromInfo>()
 export default {
   async fetch(request: Request, env: Environment) {
     const bot = new Bot(env.BOT_TOKEN)
-    const cleanupMapMiddleware = cleanupMap(msgMap)
 
+    const cleanupMapMiddleware = cleanupMap(msgMap)
     // cleanup map
     bot.use(cleanupMapMiddleware)
     // Prevent joining group
@@ -28,6 +28,8 @@ export default {
           `Hello World. 这是 @${env.MASTER_USERNAME} 的私聊机器人，请不要在群组中使用`
         )
     )
+
+    bot.command('spotify', spotifyDownloadCommand)
 
     const cb = webhookCallback(bot, 'cloudflare-mod')
 

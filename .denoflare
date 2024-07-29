@@ -3,6 +3,10 @@
   "scripts": {
     "my-bot": {
       "path": "src/bot.ts",
+      "compatibilityFlags": [
+        "nodejs_compat"
+      ],
+      "compatibilityDate": "2024-07-25",
       "localPort": 3030,
       "bindings": {
         "BOT_TOKEN": {

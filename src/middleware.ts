@@ -1,4 +1,11 @@
-import type { Context, NextFunction, Bot, MiddlewareFn } from 'grammy'
+import {
+  type Context,
+  type NextFunction,
+  type Bot,
+  type MiddlewareFn,
+  type CommandContext,
+  InputFile,
+} from 'grammy'
 import type { Environment, FromInfo } from './type.ts'
 
 export async function preventGroupJoin(ctx: Context, next: NextFunction) {
@@ -115,30 +122,40 @@ export function cleanupMap(
 }
 
 // url: spotify URL
-export async function getSpotifyDownloadLink(url: string) {
+export async function spotifyDownloadCommand(ctx: CommandContext<Context>) {
+  if (!ctx.match) return await ctx.reply('请输入一个 Spotify 链接')
+
   const spotifyMetadataUrl = 'https://spotifymate.com'
   const _metadata_res = await fetch(spotifyMetadataUrl)
   const _metadata_text = await _metadata_res.text()
   const _metadata_pattern = /([^"]+)"\s+.+value="([^"]+)/
 
   const _metadata_match = _metadata_text.match(_metadata_pattern)
-  if (!_metadata_match) return null
+  if (!_metadata_match)
+    return await ctx.reply('请联系作者，不能获取 metadata 数据')
   const [_, flag, value] = _metadata_match
-  const sessionData = _metadata_res.headers.getSetCookie()[0]
+  const sessionData = _metadata_res.headers.get('Set-Cookie')
+  if (!sessionData) return await ctx.reply('请联系作者，不能获取 session 数据')
 
   const form = new FormData()
   form.append(flag, value)
-  form.append('url', url)
+  form.append('url', ctx.match)
 
-  const res = await fetch(`${spotifyMetadataUrl}/action`, {
+  const _mp3_url_res = await fetch(`${spotifyMetadataUrl}/action`, {
     method: 'POST',
     headers: {
       Cookie: sessionData,
     },
     body: form,
   })
-  const text = await res.text()
+  const text = await _mp3_url_res.text()
   const pattern = /<a\s+[^>]*href\s*=\s*["']([^"']*)["'][^>]*>/i
   const match = text.match(pattern)
-  return match ? match[1] : null
+  if (!match) return await ctx.reply('请联系作者，不能获取下载链接')
+  const [__, mp3] = match
+
+  const _mp3_res = await fetch(mp3)
+  const _mp3_blob = await _mp3_res.blob()
+  // send audio
+  await ctx.replyWithAudio(new InputFile(_mp3_blob))
 }
