@@ -2,6 +2,10 @@
 
 This is a private chatting bot for telegram. It can prevent other users from directly chatting with you and filter out some scammer.
 
+And `/spotify` command(+ `url`) can help you to get the Spotify song.
+
+You can get a try: [Bot](https://t.me/fwqaaq_chat_bot)
+
 ## Deploy
 
 1. Install [Deno](https://deno.land/) and [denoflare](https://denoflare.dev/)
