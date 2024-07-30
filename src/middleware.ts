@@ -57,10 +57,14 @@ export async function handleGeneralMessage(
 
     // transfer the message to user
     try {
-      await bot.api.sendMessage(
+      await bot.api.copyMessage(
         fromUser.chatId,
-        `来自 @${env.MASTER_USERNAME} 的消息: ${ctx.message.text}`,
+        ctx.chat.id,
+        ctx.message.message_id,
         {
+          caption:
+            ctx.message.caption ??
+            `来自 @${env.MASTER_USERNAME} 的消息: ${ctx.message.text}`,
           reply_parameters: { message_id: fromUser.messageId },
         }
       )
@@ -76,9 +80,10 @@ export async function handleGeneralMessage(
   }
 
   try {
-    const sendMessage = await bot.api.sendMessage(
+    const sendMessage = await bot.api.forwardMessage(
       env.MASTER_ID,
-      `来自 @${ctx.from.username} 的消息: ${ctx.message.text}`
+      ctx.chat.id,
+      ctx.message.message_id
     )
 
     msgMap.set(sendMessage.message_id, {
