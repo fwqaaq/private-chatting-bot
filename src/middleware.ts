@@ -5,8 +5,10 @@ import {
   type MiddlewareFn,
   type CommandContext,
   InputFile,
+  BotError,
 } from 'grammy'
 import type { Environment, FromInfo } from './type.ts'
+import { catchError } from './utils.ts'
 
 export async function preventGroupJoin(ctx: Context, next: NextFunction) {
   const update = ctx.myChatMember
@@ -16,12 +18,10 @@ export async function preventGroupJoin(ctx: Context, next: NextFunction) {
     update.new_chat_member.status === 'member' ||
     update.new_chat_member.status === 'administrator'
   ) {
-    try {
-      await ctx.leaveChat()
-      console.log(`机器人已离开群组: ${update.chat.id}`)
-    } catch (error) {
-      console.error(`离开群组时出错: ${error}`)
-    }
+    const [e] = await catchError(ctx.leaveChat(), [BotError])
+    if (e) return console.error(`Error leaving group: ${e}`)
+    console.log(`Left group ${ctx.chat?.id}`)
+
     // leave the group, stop the middleware chain
     return
   }
@@ -62,9 +62,6 @@ export async function handleGeneralMessage(
         ctx.chat.id,
         ctx.message.message_id,
         {
-          caption:
-            ctx.message.caption ??
-            `来自 @${env.MASTER_USERNAME} 的消息: ${ctx.message.text}`,
           reply_parameters: { message_id: fromUser.messageId },
         }
       )
@@ -162,5 +159,7 @@ export async function spotifyDownloadCommand(ctx: CommandContext<Context>) {
   const _mp3_res = await fetch(mp3)
   const _mp3_blob = await _mp3_res.blob()
   // send audio
-  await ctx.replyWithAudio(new InputFile(_mp3_blob))
+  await ctx.replyWithAudio(new InputFile(_mp3_blob), {
+    reply_parameters: ctx.message && { message_id: ctx.message.message_id },
+  })
 }

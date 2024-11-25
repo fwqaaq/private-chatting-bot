@@ -13,6 +13,11 @@ export default {
   async fetch(request: Request, env: Environment) {
     const bot = new Bot(env.BOT_TOKEN)
 
+    await bot.api.setMyCommands([
+      { command: 'start', description: '开始使用' },
+      { command: 'spotify', description: '下载 Spotify 音乐' },
+    ])
+
     const cleanupMapMiddleware = cleanupMap(msgMap)
     // cleanup map
     bot.use(cleanupMapMiddleware)
