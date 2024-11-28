@@ -56,18 +56,18 @@ export async function handleGeneralMessage(
     if (!fromUser) return await ctx.reply('未找到对应的用户')
 
     // transfer the message to user
-    try {
-      await bot.api.copyMessage(
+    const [e] = await catchError(
+      bot.api.copyMessage(
         fromUser.chatId,
         ctx.chat.id,
         ctx.message.message_id,
         {
           reply_parameters: { message_id: fromUser.messageId },
         }
-      )
-    } catch (e) {
-      console.error(`转发消息给用户时出错: ${e}`)
-    }
+      ),
+      [BotError]
+    )
+    if (e) return await ctx.reply('转发消息失败')
     return await next()
   }
 
@@ -76,22 +76,18 @@ export async function handleGeneralMessage(
     return await next()
   }
 
-  try {
-    const sendMessage = await bot.api.forwardMessage(
-      env.MASTER_ID,
-      ctx.chat.id,
-      ctx.message.message_id
-    )
+  const [_e, sendMessage] = await catchError(
+    bot.api.forwardMessage(env.MASTER_ID, ctx.chat.id, ctx.message.message_id),
+    [BotError]
+  )
+  if (_e) return await ctx.reply(`发送消息给 ${env.MASTER_USERNAME} 时出错`)
 
-    msgMap.set(sendMessage.message_id, {
-      chatId: ctx.chat.id,
-      messageId: ctx.message.message_id,
-      username: ctx.from.username,
-      time: +Date.now(),
-    })
-  } catch (e) {
-    console.error(`发送消息给 ${env.MASTER_USERNAME} 时出错: ${e}`)
-  }
+  msgMap.set(sendMessage.message_id, {
+    chatId: ctx.chat.id,
+    messageId: ctx.message.message_id,
+    username: ctx.from.username,
+    time: +Date.now(),
+  })
 
   return await next()
 }
